@@ -1,7 +1,7 @@
 from pymycobot import UltraArmP1
 import time
 
-ua = UltraArmP1('/dev/ttyUSB0', 115200, debug=1)
+ua = UltraArmP1('/dev/ttyUSB0', 1000000, debug=1)
 ua.go_home()
 for i in range(1, 2):
     angles = ua.get_angles_info()
