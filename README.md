@@ -1,211 +1,105 @@
-# mycobot_ros2
+cd ~/ros2_foxy/src/myarm_kinematics
+cat << 'EOF' > README.md
+# myarm_kinematics
 
-[![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/chinese.svg)](https://docs.elephantrobotics.com/docs/gitbook/12-ApplicationBaseROS/12.2-ROS2/12.2.1-ROS2%E7%9A%84%E5%AE%89%E8%A3%85.html)
-[![jaywcjlove/sb](https://jaywcjlove.github.io/sb/lang/english.svg)](https://docs.elephantrobotics.com/docs/gitbook-en/12-ApplicationBaseROS/12.2-ROS2/12.2.3-ROS2%E4%BB%8B%E7%BB%8D.html)
+A custom ROS 2 (Foxy) package for computing Forward and Inverse Kinematics for the myArm m750 robotic arm. This package utilizes the **Pinocchio** rigid body dynamics library as its mathematical backend and includes real-time Cartesian trajectory tracking and RViz2 visualization.
 
-[中文文档](https://docs.elephantrobotics.com/docs/gitbook/12-ApplicationBaseROS/12.2-ROS2/12.2.1-ROS2%E7%9A%84%E5%AE%89%E8%A3%85.html) | [English Documentation](https://docs.elephantrobotics.com/docs/gitbook-en/12-ApplicationBaseROS/12.2-ROS2/12.2.3-ROS2%E4%BB%8B%E7%BB%8D.html)
+## Features
 
-myCobot ROS2 package
+* **Robust URDF Parsing:** Safely resolves frame ambiguities between physical links (BODY) and JOINTS.
+* **Forward Kinematics (FK):** Maps Joint Space (`q`) to Cartesian Space (SE3 poses) in real-time.
+* **Custom Inverse Kinematics (IK) Solver:** Implements a numerical Levenberg-Marquardt (damped pseudo-inverse) optimization algorithm to handle 6+ DOF kinematic redundancy and avoid singularities.
+* **Real-time Trajectory Tracking:** ROS 2 nodes that calculate continuous IK at 50Hz to draw geometric shapes in 3D space.
+* **RViz2 Integration:** Broadcasts `/joint_states` and `visualization_msgs/Marker` for real-time visual feedback.
 
-**Notes**:
+## Dependencies
 
-* Make sure that `Atom` is flashed into the top Atom and `Transponder` or `minirobot` is flashed into the base Basic .The tool download address: [https://github.com/elephantrobotics/myCobot/tree/main/Software](https://github.com/elephantrobotics/myCobot/tree/main/Software)
-* Supported ROS2 versions:
-  * Ubuntu 20.04 / ROS2 Foxy - branch `foxy`
-  * Ubuntu 20.04 / ROS2 Galactic - branch `galactic`
-  * Ubuntu 22.04 / ROS2 Humble - branch `humble`
-  * Orin Nano Ubunut 20.04 / ROS2 Foxy - branch `foxy`
-  * LimoPro Orin Nano Ubunut 20.04 / ROS2 Foxy - branch `foxy`
-  * PC Virtual Machine Ubunut 20.04 / ROS2 Foxy - branch `foxy`
+* ROS 2 Foxy
+* [Pinocchio](https://github.com/stack-of-tasks/pinocchio)
+* Eigen3
+* `sensor_msgs`
+* `visualization_msgs`
 
-## Installation
+## Installation & Build
 
-### 1.1 Pre-Requriements
+Clone this package into your ROS 2 workspace (e.g., `~/ros2_foxy/src`), then build using `colcon`:
 
-For using this package, the [Python api](https://github.com/elephantrobotics/pymycobot) library should be installed first.
+bash
+cd ~/ros2_foxy
+colcon build --packages-select myarm_kinematics
+source install/setup.bash
 
-```bash
-pip install pymycobot --user
-```
 
-### 1.2 Package Download and Install
+## Package Structure
 
-Install ros package in your src folder of your Colcon workspace.
+* `include/myarm_kinematics/`
+  * `robot_model.hpp`: Handles URDF loading and model initialization.
+  * `forward.hpp`: FK calculation definitions.
+  * `inverse.hpp`: Numerical IK solver definitions.
+* `src/`
+  * `forward.cpp`: Implements safe frame extraction and FK matrix multiplication.
+  * `inverse.cpp`: Implements the iterative IK loop with damping factors.
+* `apps/`
+  * Contains the executable ROS 2 nodes for testing and visualization.
 
-```bash
-$ cd ~/colcon_ws/src
-# For the humble branch
-$ git clone -b humble --depth 1 https://github.com/elephantrobotics/mycobot_ros2.git
-# For the foxy branch
-$ git clone -b foxy --depth 1 https://github.com/elephantrobotics/mycobot_ros2.git
-# For the galactic branch
-$ git clone -b galactic --depth 1 https://github.com/elephantrobotics/mycobot_ros2.git
-$ cd ~/colcon_ws
-$ colcon build
-$ source ~/colcon_ws/install/setup.bash
-$ sudo echo 'source ~/colcon_ws/install/setup.bash' >> ~/.bashrc
-```
+---
+
+## Executables and Usage
+
+All executables require the path to the robot's URDF file as an argument. 
+*Example URDF path:* `~/ros2_foxy/src/mycobot_ros2/mycobot_description/urdf/myarm_m750/myarm_m750.urdf`
+
+### 1. Forward Kinematics Demo (`fk_demo`)
+Sets specific joint angles and prints the resulting Cartesian position (XYZ) and Rotation Matrix of the `gripper` frame to the terminal.
+bash
+ros2 run myarm_kinematics fk_demo <path_to_urdf>
+
+
+### 2. Inverse Kinematics Demo (`ik_demo`)
+Runs a "Round Trip" unit test. Generates a mathematically perfect Cartesian pose, scrambles the joint angles, and runs the numerical solver to find its way back to the target.
+bash
+ros2 run myarm_kinematics ik_demo <path_to_urdf>
+
+
+### 3. Trajectory Tracker: Square (`draw_square`)
+Continuously solves IK at 50Hz to trace a 30cm x 30cm square in Cartesian space. Publishes to `/joint_states` for RViz.
+bash
+ros2 run myarm_kinematics draw_square <path_to_urdf>
+
+
+### 4. Trajectory Tracker: Rose Curve Flower (`draw_flower`)
+Calculates a continuous polar Rose Curve (r = a * cos(k * theta)) to draw a 5-petal flower. Publishes robot joints and a neon cyan `LINE_STRIP` Marker to visually trace the trajectory in RViz.
+bash
+ros2 run myarm_kinematics draw_flower <path_to_urdf>
+
+
+---
+
+## Visualization in RViz2
+
+To see the robot moving and drawing in real-time, you need three terminals running simultaneously:
+
+**Terminal 1: Robot State Publisher**
+Broadcasts the physical TF transforms based on the URDF.
+bash
+ros2 run robot_state_publisher robot_state_publisher <path_to_urdf>
+
+
+**Terminal 2: The Kinematics Node**
+Run either `draw_square` or `draw_flower` (see commands above).
+
+**Terminal 3: RViz2**
+bash
+ros2 run rviz2 rviz2
+
+* **Fixed Frame:** Set to `base` (or `base_link`).
+* **RobotModel:** Add this display and set the Description Topic to `/robot_description`.
+* **Marker:** Add this display and set the Marker Topic to `/trajectory_marker` (Required for `draw_flower`).
 
 ## Troubleshooting
 
-1. On ROS2 Humble if slider_control does not show GUI properly, update file
-   `/opt/ros/humble/lib/python3.10/site-packages/joint_state_publisher_gui/joint_state_publisher_gui.py`
-   from here: https://github.com/ros/joint_state_publisher/blob/ros2/joint_state_publisher_gui/joint_state_publisher_gui/joint_state_publisher_gui.py
-
-
-## URDF Model Graph
-
-[mycobot 280 m5](./mycobot_description/urdf/mycobot_280_m5/mycobot_280_m5.urdf)
-
-![280 m5](./demo_img/280m5/280_m5.png)
-
-[mycobot 280 m5 pump](./mycobot_description/urdf/mycobot_280_m5/mycobot_280_m5_with_pump.urdf)
-
-![280 m5 pump](./demo_img/280m5/280_m5_pump.png)
-
-[mycobot 280 m5 camera flange](./mycobot_description/urdf/mycobot_280_m5/mycobot_280_m5_with_camera_flange.urdf)
-
-![280 m5 camera flange](./demo_img/280m5/280_m5_camera_flange.png)
-
-[mycobot 280 m5 camera flange & pump](./mycobot_description/urdf/mycobot_280_m5/mycobot_280_m5_with_camera_flange_pump.urdf)
-
-![280 m5 camera flange & pump](./demo_img/280m5/280_m5_camera_flange_pump.png)
-
-[mycobot 280 m5 adaptive gripper](./mycobot_description/urdf/mycobot_280_m5/mycobot_280_m5_adaptive_gripper.urdf)
-![280 m5 adaptive gripper](./demo_img/280m5/280_m5_adaptive_gripper.png)
-
-[mycobot 280 pi](./mycobot_description/urdf/mycobot_280_pi/mycobot_280_pi.urdf)
-
-![280 pi](./demo_img/280pi/280_pi.png)
-
-[mycobot 280 pi pump](./mycobot_description/urdf/mycobot_280_pi/mycobot_280_pi_with_pump.urdf)
-
-![280 pi pump](./demo_img/280pi/280_pi_pump.png)
-
-[mycobot 280 pi camera flange](./mycobot_description/urdf/mycobot_280_pi/mycobot_280_pi_with_camera_flange.urdf)
-
-![280 pi camera flange](./demo_img/280pi/280_pi_camera_flange.png)
-
-[mycobot 280 pi camera flange & pump](./mycobot_description/urdf/mycobot_280_pi/mycobot_280_pi_with_camera_flange_pump.urdf)
-
-![280 pi camera flange pump](./demo_img/280pi/280_pi_camera_flange_pump.png)
-
-[mycobot 280 pi adaptive gripper](./mycobot_description/urdf/mycobot_280_pi/mycobot_280_pi_adaptive_gripper.urdf)
-![280 pi adaptive gripper](./demo_img/280pi/280_pi_adaptive_gripper.png)
-
-
-[mycobot 280 JetsonNano](./mycobot_description/urdf/mycobot_280_jn/mycobot_280_jn.urdf)
-
-![280 jn](./demo_img/280jn/280jn.png)
-
-[mycobot 280 JetsonNano adaptive gripper](./mycobot_description/urdf/mycobot_280_jn/mycobot_280_jn_adaptive_gripper.urdf)
-![280 m5 adaptive gripper](./demo_img/280jn/280jn_adaptive_gripper.png)
-
-
-[mycobot 280 Arduino](./mycobot_description/urdf/mycobot_280_arduino/mycobot_280_arduino.urdf)
-
-![280 jn](./demo_img/280ar/280ar.png)
-
-[mycobot 280 Arduino adaptive gripper](./mycobot_description/urdf/mycobot_280_arduino/mycobot_280_arduino_adaptive_gripper.urdf)
-![280 AR adaptive gripper](./demo_img/280ar/280ar_adaptive_gripper.png)
-
-
-[mycobot 280 x3pi](./mycobot_description/urdf/mycobot_280_x3pi/mycobot_280_x3pi.urdf)
-
-![280 x3pi](./demo_img/280pi/280_pi.png)
-
-[mycobot 280 x5pi](./mycobot_description/urdf/mycobot_280_x5pi/mycobot_280_x5pi.urdf)
-
-![280 x5pi](./demo_img/280pi/280_pi.png)
-
-[mycobot 280 RDKX5](./mycobot_description/urdf/mycobot_280_rdkx5/mycobot_280_rdkx5.urdf)
-
-![280 rdkx5](./demo_img/280rdkx5/280rdkx5.png)
-
-[mycobot 280 RDKX5 adaptive gripper](./mycobot_description/urdf/mycobot_280_rdkx5/mycobot_280_rdkx5_adaptive_gripper.urdf)
-
-![280 rdkx5 gripper](./demo_img/280rdkx5/280rdkx5_adaptive_gripper.png)
-
-[mechArm 270 m5](./mycobot_description/urdf/mecharm_270_m5/mecharm_270_m5.urdf)
-
-![270 m5](./demo_img/270m5/270m5.png)
-
-[mechArm 270 m5 adaptive gripper](./mycobot_description/urdf/mecharm_270_m5/mecharm_270_m5_adaptive_gripper.urdf)
-
-![270 m5 gripper](./demo_img/270m5/270m5_adaptive_gripper.png)
-
-[mechArm 270 pi](./mycobot_description/urdf/mecharm_270_pi/mecharm_270_pi.urdf)
-
-![270 pi](./demo_img/270pi/270pi.png)
-
-[mechArm 270 pi adaptive gripper](./mycobot_description/urdf/mecharm_270_pi/mecharm_270_pi_adaptive_gripper.urdf)
-
-![270 pi gripper](./demo_img/270pi/270PI_adaptive_gripper.png)
-
-[myPalletizer 260 m5](./mycobot_description/urdf/mypalletizer_260_m5/mypalletizer_260_m5.urdf)
-
-![260 m5](./demo_img/260m5/260m5.png)
-
-[myPalletizer 260 m5 adaptive gripper](./mycobot_description/urdf/mypalletizer_260_m5/mypalletizer_260_m5_adaptive_gripper.urdf)
-
-![260 m5 gripper](./demo_img/260m5/260m5_gripper.png)
-
-[myPalletizer 260 pi](./mycobot_description/urdf/mypalletizer_260_pi/mypalletizer_260_pi.urdf)
-
-![260 pi](./demo_img/260pi/260pi.png)
-
-[myPalletizer 260 pi adaptive gripper](./mycobot_description/urdf/mypalletizer_260_pi/mypalletizer_260_pi_adaptive_gripper.urdf)
-
-![260 pi gripper](./demo_img/260pi/260pi_gripper.png)
-
-[mycobot 320 m5 2022](./mycobot_description/urdf/mycobot_320_m5_2022/mycobot_320_m5_2022.urdf)
-
-![320 m5 2022](./demo_img/320m5_2022/320m5_2022.png)
-
-[mycobot 320 m5 2022 adaptive gripper](./mycobot_description/urdf/mycobot_320_m5_2022/mycobot_320_m5_2022_adaptive_gripper.urdf)
-
-![320 m5 2022 adaptive gripper](./demo_img/320m5_2022/320m5_adaptive_gripper.png)
-
-[mycobot 320 m5 2022 force gripper](./mycobot_description/urdf/mycobot_320_m5_2022/mycobot_320_m5_2022_force_gripper.urdf)
-
-![320 m5 2022 force gripper](./demo_img/320m5_2022/320m5_force_gripper.png)
-
-[mycobot 320 pi 2022](./mycobot_description/urdf/mycobot_320_pi_2022/mycobot_320_pi_2022.urdf)
-
-![320 pi 2022](./demo_img/320pi_2022/320pi_2022.png)
-
-[mycobot 320 pi 2022 adaptive gripper](./mycobot_description/urdf/mycobot_320_pi_2022/mycobot_320_pi_2022_adaptive_gripper.urdf)
-
-![320 pi 2022 force gripper](./demo_img/320pi_2022/320pi_force_gripper.png)
-
-[mycobot 320 pi 2022 force gripper](./mycobot_description/urdf/mycobot_320_pi_2022/mycobot_320_pi_2022_force_gripper.urdf)
-
-![320 pi 2022 force gripper](./demo_img/320pi_2022/320pi_force_gripper.png)
-
-[ultraArm P340](./mycobot_description/urdf/ultraArm_p340/ultraArm_p340.urdf)
-
-![p340](./demo_img/ultraArm_p340/ultraArmp340.png)
-
-[mybuddy](./mycobot_description/urdf/mybuddy/mybuddy.urdf)
-
-![mybuddy](./demo_img/mybuddy/mybuddy.png)
-
-[mycobot pro 600](./mycobot_description/urdf/mycobot_pro_600/mycobot_pro_600.urdf)
-
-![pro600](./demo_img/pro600/pro600.png)
-
-[myArm 300 Pi](./mycobot_description/urdf/myarm_300_pi/myarm_300_pi.urdf)
-
-![myarm](./demo_img/myarm300/myarm300.png)
-
-[mycobot pro 630](./mycobot_description/urdf/mycobot_pro_630/mycobot_pro_630.urdf)
-
-![pro630](./demo_img/pro630/pro630.png)
-
-[mycobot pro 450](./mycobot_description/urdf/mycobot_pro_450/mycobot_pro_450.urdf)
-
-![pro450](./demo_img/pro450/pro450.png)
-
-[mycobot pro 450 force gripper](./mycobot_description/urdf/mycobot_pro_450/mycobot_pro_450_force_gripper.urdf)
-
-![pro450 force gripper](./demo_img/pro450/pro450_force_gripper.png)
+* **Robot is invisible in RViz:** You likely forgot to source your workspace in the terminal running RViz. Close RViz, run `source install/setup.bash`, and relaunch.
+* **IK fails to converge:** Ensure your Cartesian target is within the physical reach of the arm. The solver will timeout after 1000 iterations if a pose is mathematically impossible.
+* **CMake Linker Errors (rosidl_message_type_support):** Ensure any node publishing ROS messages is correctly linked in `CMakeLists.txt` using `ament_target_dependencies(node_name rclcpp sensor_msgs visualization_msgs)`.
+EOF
+echo "README.md has been successfully generated!"
