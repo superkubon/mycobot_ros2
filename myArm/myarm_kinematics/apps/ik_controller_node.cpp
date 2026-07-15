@@ -23,11 +23,11 @@ public:
         Eigen::VectorXd lower_limits = robot_.model().lowerPositionLimit;
         Eigen::VectorXd upper_limits = robot_.model().upperPositionLimit;
         
-        current_q_ = (lower_limits + upper_limits) / 2.0;
+        current_q_ = (lower_limits + upper_limits)*0;
 
-            current_q_[0] += 0.05;
-            current_q_[2] -= 0.1;
-            current_q_[4] += 0.04; 
+            // current_q_[0] += 0.05;
+            // current_q_[2] -= 0.1;
+            // current_q_[4] += 0.04; 
             // current_q_[6] += 0.04; 
 
         joint_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
@@ -83,7 +83,16 @@ private:
             msg.name.push_back(robot_.model().names[i]);
             msg.position.push_back(q[i - 1]); 
         }
+        std::stringstream ss;
+        ss << "Danh sách Joint được publish: [";
+        for (size_t i = 0; i < msg.name.size(); ++i) {
+            ss << msg.name[i];
+            if (i < msg.name.size() - 1) ss << ", ";
+        }
+        ss << "]";
         
+        // In ra màn hình duy nhất 1 lần (để không bị ngập terminal)
+        RCLCPP_INFO_STREAM_ONCE(this->get_logger(), ss.str());
         joint_pub_->publish(msg);
     }
 

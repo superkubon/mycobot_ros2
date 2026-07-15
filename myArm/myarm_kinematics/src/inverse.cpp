@@ -14,10 +14,11 @@ bool InverseKinematics::solve(const std::string& frame_name,
 {
     const double eps = 1e-4;      
     const int IT_MAX = 1000;      
-    const double damp = 1e-6;     
+    const double damp = 1e-6; 
+    const double DT = 0.5; // Tương đương alpha, tốc độ hội tụ
     
+    // Lấy ID của End-Effector (Gripper)
     pinocchio::FrameIndex frame_id;
-    
     if (robot_.model().existFrame(frame_name, pinocchio::BODY)) {
         frame_id = robot_.model().getFrameId(frame_name, pinocchio::BODY);
     } else {
@@ -28,29 +29,50 @@ bool InverseKinematics::solve(const std::string& frame_name,
     J.setZero();
 
     bool success = false;
+    typedef Eigen::Matrix<double, 6, 1> Vector6d;
+    Vector6d err;
+    Eigen::VectorXd v(robot_.model().nv);
+
     for (int i = 0; i < IT_MAX; i++)
     {
         pinocchio::forwardKinematics(robot_.model(), robot_.data(), q);
         pinocchio::updateFramePlacements(robot_.model(), robot_.data());
         const pinocchio::SE3 current_pose = robot_.data().oMf[frame_id];
         
-        const pinocchio::SE3 error_transform = current_pose.actInv(target_pose);
-        const Eigen::VectorXd err = pinocchio::log6(error_transform).toVector();
-        
+        // 1. Tính toán lỗi theo chuẩn của Pinocchio Example (Hệ LOCAL)
+        const pinocchio::SE3 iMd = current_pose.actInv(target_pose);
+        err = pinocchio::log6(iMd).toVector(); 
+
         if (err.norm() < eps)
         {
             success = true;
             break;
         }
 
+        // 2. Lấy Jacobian tại hệ LOCAL
         pinocchio::computeFrameJacobian(robot_.model(), robot_.data(), q, frame_id, pinocchio::LOCAL, J);
         
-        pinocchio::Data::Matrix6 J_damped = J * J.transpose() + damp * pinocchio::Data::Matrix6::Identity();
-        
-        // NO NEGATIVE SIGN HERE!
-        Eigen::VectorXd v = J.transpose() * J_damped.llt().solve(err);
-        
-        q = pinocchio::integrate(robot_.model(), q, v);
+        // 3. Phép biến đổi Jlog6 "Thần thánh" để không bị nổ góc xoay
+        pinocchio::Data::Matrix6 Jlog;
+        pinocchio::Jlog6(iMd.inverse(), Jlog);
+        J = -Jlog * J; 
+
+        // 4. Giải hệ phương trình Damped Least Squares với ldlt (ổn định hơn llt)
+        pinocchio::Data::Matrix6 JJt;
+        JJt.noalias() = J * J.transpose();
+        JJt.diagonal().array() += damp;
+        v.noalias() = -J.transpose() * JJt.ldlt().solve(err);
+
+        // 5. Cập nhật góc khớp
+        q = pinocchio::integrate(robot_.model(), q, v * DT);
+
+        // 6. GIỮ LẠI TÍNH NĂNG BẢO VỆ PHẦN CỨNG CỦA BẠN
+        for (int j = 0; j < q.size(); ++j) {
+            // Chuẩn hóa góc về khoảng -pi đến pi
+            q[j] = std::atan2(std::sin(q[j]), std::cos(q[j]));
+        }
+        // Ép cứng vào giới hạn URDF (-150 đến +150 độ)
+        q = q.cwiseMax(robot_.model().lowerPositionLimit).cwiseMin(robot_.model().upperPositionLimit);
     }
     return success;
 }

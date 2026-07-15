@@ -109,6 +109,17 @@ ament_target_dependencies(ik_controller_node
     ament_index_cpp
 )
 
+add_executable(fk_test_node apps/fk_test_node.cpp)
+target_link_libraries(fk_test_node
+  robot_model
+)
+ament_target_dependencies(fk_test_node
+  rclcpp
+  sensor_msgs
+  ament_index_cpp
+  pinocchio
+)
+
 add_compile_options(-Wno-ignored-attributes)
 
 install(
@@ -121,6 +132,7 @@ install(
         draw_square
         draw_circle
         draw_flower
+        fk_test_node
     DESTINATION lib/${PROJECT_NAME}
 )
 

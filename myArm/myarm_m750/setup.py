@@ -57,6 +57,7 @@ setup(
             'teleop_keyboard = myarm_m750.teleop_keyboard:main',
             'read_control = myarm_m750.read_control:main',
             'combined_control = myarm_m750.combined_control:main',
+            'hardware_interface = myarm_m750.hardware_interface:main',
         ],
     },
 )

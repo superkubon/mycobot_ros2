@@ -101,3 +101,4 @@ ros2 run rviz2 rviz2
 * **CMake Linker Errors (rosidl_message_type_support):** Ensure any node publishing ROS messages is correctly linked in `CMakeLists.txt` using `ament_target_dependencies(node_name rclcpp sensor_msgs visualization_msgs)`.
 EOF
 echo "README.md has been successfully generated!"
+ros2 topic pub -1 /target_pose geometry_msgs/msg/PoseStamped "{header: {frame_id: 'base_link'}, pose: {position: {x: 0.5, y: 0.2, z: 0.4}, orientation: {x: 0.0, y: 0.0, z: 0.707, w: 0.707}}}"
