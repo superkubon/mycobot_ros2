@@ -17,7 +17,7 @@ def generate_launch_description():
         name="model",
         default_value=os.path.join(
             get_package_share_path("mycobot_description"),
-            "urdf/myarm_m750/myarm_m750.urdf"
+            "urdf/myarm_m750/myarm_m750_poe_v3_1.urdf"
         )
     )
     res.append(model_launch_arg)
@@ -26,7 +26,7 @@ def generate_launch_description():
         name="rvizconfig",
         default_value=os.path.join(
             get_package_share_path("myarm_m750"),
-            "config/myarm_m750.rviz"
+            "config/myarm_m750_new.rviz"
         )
     )
     res.append(rvizconfig_launch_arg)

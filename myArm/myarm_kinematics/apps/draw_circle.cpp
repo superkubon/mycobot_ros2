@@ -29,7 +29,7 @@ public:
         publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
         
         // Run the loop at 50 Hz (every 20 milliseconds) for smooth animation
-        timer_ = this->create_wall_timer(20ms, std::bind(&DrawCircleNode::timer_callback, this));
+        timer_ = this->create_wall_timer(50ms, std::bind(&DrawCircleNode::timer_callback, this));
         start_time_ = this->now();
         
         RCLCPP_INFO(this->get_logger(), "Starting to draw a circle! Open RViz to see it.");
@@ -41,9 +41,9 @@ private:
         double t = (this->now() - start_time_).seconds();
         
         double radius = 0.15; // 15 cm radius
-        double speed = 1.5;   // Radian speed 
+        double speed = 1.0;   // Radian speed 
         
-        double x_base = 0.50; 
+        double x_base = 0.5; 
         
         // Y and Z form the circle using sin and cos
         double y = radius * std::cos(t * speed);
@@ -52,15 +52,12 @@ private:
         Eigen::Vector3d target_position(x_base, y, z);
         
         // Lock the orientation of the gripper
-        Eigen::Matrix3d target_rotation;
-        target_rotation <<  0.0,  0.0, -1.0,
-                            1.0,  0.0,  0.0,
-                            0.0, -1.0,  0.0;
+        Eigen::Matrix3d target_rotation = Eigen::Matrix3d::Identity();
         
         pinocchio::SE3 target_pose(target_rotation, target_position);
 
         // Solve IK using the previous joint angles as the new starting guess
-        bool success = ik_solver_->solve("gripper", target_pose, q_current_);
+        bool success = ik_solver_->solve("flange_link", target_pose, q_current_);
 
         if (success) {
             publish_joints();

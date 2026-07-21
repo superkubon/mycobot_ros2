@@ -1,0 +1,150 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.5"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "myarm_kinematics",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "draw_circle::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-draw_circle-ccda455a48d7830490f1.json",
+					"name" : "draw_circle",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "draw_flower::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-draw_flower-316dc30b122a1247ebc4.json",
+					"name" : "draw_flower",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "draw_square::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-draw_square-da201af17aeb484673a3.json",
+					"name" : "draw_square",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "fk_demo::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-fk_demo-2c427df3cd6c67151ebb.json",
+					"name" : "fk_demo",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "fk_test_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-fk_test_node-7401cbb33c54acbd7d08.json",
+					"name" : "fk_test_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ik_controller_node::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ik_controller_node-19ffc48af862398d35a5.json",
+					"name" : "ik_controller_node",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ik_demo::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ik_demo-2681c137801b4e1fb271.json",
+					"name" : "ik_demo",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "load_model_demo::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-load_model_demo-997728675e08034b2783.json",
+					"name" : "load_model_demo",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "myarm_kinematics_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-myarm_kinematics_uninstall-be9ee50923973e7be04f.json",
+					"name" : "myarm_kinematics_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "robot_model::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-robot_model-d9f40d8524d7eb6d6c6c.json",
+					"name" : "robot_model",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-1863008d901b90116f3f.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/fong/ros2_foxy/src/mycobot_ros2/build/myarm_kinematics",
+		"source" : "/home/fong/ros2_foxy/src/mycobot_ros2/myArm/myarm_kinematics"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}

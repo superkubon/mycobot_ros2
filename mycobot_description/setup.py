@@ -54,7 +54,11 @@ setup(
         ('share/' + package_name + '/urdf'+'/myarm_300_pi', glob("urdf/myarm_300_pi/*")),
         
         ('share/' + package_name + '/urdf'+'/myarm_c650', glob("urdf/myarm_c650/*")),
-        ('share/' + package_name + '/urdf'+'/myarm_m750', glob("urdf/myarm_m750/*")),
+        (os.path.join('share', package_name, 'urdf', 'myarm_m750'), glob('urdf/myarm_m750/*.urdf')),
+        (os.path.join('share', package_name, 'urdf', 'myarm_m750'), glob('urdf/myarm_m750/*.xacro')),
+    
+        # This copies the mesh files INSIDE the meshes folder
+        (os.path.join('share', package_name, 'urdf', 'myarm_m750', 'meshes'), glob('urdf/myarm_m750/meshes/*')),
         
         ('share/' + package_name + '/urdf'+'/mycobot_pro_630', glob("urdf/mycobot_pro_630/*")),
         

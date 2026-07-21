@@ -1,0 +1,27 @@
+[0.691s] Invoking command in '/home/fong/ros2_foxy/src/mycobot_ros2/myArm/myarm_m750': PYTHONPATH=/home/fong/ros2_foxy/src/mycobot_ros2/build/myarm_m750/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/myarm_m750 build --build-base /home/fong/ros2_foxy/src/mycobot_ros2/build/myarm_m750/build install --record /home/fong/ros2_foxy/src/mycobot_ros2/build/myarm_m750/install.log --install-scripts $base/lib/myarm_m750 --single-version-externally-managed install_data
+[0.918s] running egg_info
+[0.918s] writing ../../build/myarm_m750/myarm_m750.egg-info/PKG-INFO
+[0.918s] writing dependency_links to ../../build/myarm_m750/myarm_m750.egg-info/dependency_links.txt
+[0.918s] writing entry points to ../../build/myarm_m750/myarm_m750.egg-info/entry_points.txt
+[0.918s] writing requirements to ../../build/myarm_m750/myarm_m750.egg-info/requires.txt
+[0.918s] writing top-level names to ../../build/myarm_m750/myarm_m750.egg-info/top_level.txt
+[0.944s] reading manifest file '../../build/myarm_m750/myarm_m750.egg-info/SOURCES.txt'
+[0.945s] writing manifest file '../../build/myarm_m750/myarm_m750.egg-info/SOURCES.txt'
+[0.945s] running build
+[0.945s] running build_py
+[0.945s] running install
+[0.947s] running install_lib
+[0.949s] running install_data
+[0.949s] running install_egg_info
+[0.951s] removing '/home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/python3.8/site-packages/myarm_m750-0.0.0-py3.8.egg-info' (and everything under it)
+[0.952s] Copying ../../build/myarm_m750/myarm_m750.egg-info to /home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/python3.8/site-packages/myarm_m750-0.0.0-py3.8.egg-info
+[0.953s] running install_scripts
+[0.969s] Installing combined_control script to /home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/myarm_m750
+[0.970s] Installing follow_display script to /home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/myarm_m750
+[0.970s] Installing hardware_interface script to /home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/myarm_m750
+[0.970s] Installing read_control script to /home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/myarm_m750
+[0.970s] Installing simple_gui script to /home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/myarm_m750
+[0.970s] Installing slider_control script to /home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/myarm_m750
+[0.970s] Installing teleop_keyboard script to /home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/myarm_m750
+[0.970s] writing list of installed files to '/home/fong/ros2_foxy/src/mycobot_ros2/build/myarm_m750/install.log'
+[0.984s] Invoked command in '/home/fong/ros2_foxy/src/mycobot_ros2/myArm/myarm_m750' returned '0': PYTHONPATH=/home/fong/ros2_foxy/src/mycobot_ros2/build/myarm_m750/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/fong/ros2_foxy/src/mycobot_ros2/install/myarm_m750/lib/python3.8/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/myarm_m750 build --build-base /home/fong/ros2_foxy/src/mycobot_ros2/build/myarm_m750/build install --record /home/fong/ros2_foxy/src/mycobot_ros2/build/myarm_m750/install.log --install-scripts $base/lib/myarm_m750 --single-version-externally-managed install_data

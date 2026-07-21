@@ -11,7 +11,7 @@ class IKControllerNode : public rclcpp::Node
 public:
     IKControllerNode() : Node("ik_controller_node"), ik_solved_once_(false)
     {
-        std::string urdf_path = ament_index_cpp::get_package_share_directory("mycobot_description") + "/urdf/myarm_m750/myarm_m750.urdf"; 
+        std::string urdf_path = ament_index_cpp::get_package_share_directory("mycobot_description") + "/urdf/myarm_m750/myarm_m750_poe_v3_1.urdf"; 
         
         if (!robot_.loadURDF(urdf_path)) {
             RCLCPP_ERROR(this->get_logger(), "Failed to load URDF from: %s", urdf_path.c_str());
@@ -56,7 +56,7 @@ private:
                                 msg->pose.orientation.y, msg->pose.orientation.z);
         target_se3.rotation() = quat.toRotationMatrix();
 
-        bool success = ik_solver_->solve("gripper", target_se3, current_q_);
+        bool success = ik_solver_->solve("flange_link", target_se3, current_q_);
 
         if (success) {
             ik_solved_once_ = true;

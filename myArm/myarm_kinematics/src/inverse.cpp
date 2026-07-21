@@ -12,7 +12,7 @@ bool InverseKinematics::solve(const std::string& frame_name,
                               const pinocchio::SE3& target_pose, 
                               Eigen::VectorXd& q)
 {
-    const double eps = 1e-4;      
+    const double eps = 1e-3;      
     const int IT_MAX = 1000;      
     const double damp = 1e-6; 
     const double DT = 0.5; // Tương đương alpha, tốc độ hội tụ

@@ -1,0 +1,357 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="myarm_m750">
+
+  <!--
+    MyArm M750 — MDH model v2.2
+
+    MDH convention:
+      T_(i-1,i) =
+        Rx(alpha_(i-1)) Tx(a_(i-1))
+        Rz(q_i + delta_i) Tz(d_i)
+
+    Design rules:
+      1. The six-axis arm ends at flange_link (MDH frame 6).
+      2. The gripper is a separate, optional end-effector subtree.
+      3. tool0 is a configurable fixed frame referenced from flange_link.
+      4. Visual/collision mesh offsets are geometry-alignment transforms only;
+         they do not modify the MDH kinematic chain.
+
+    Joint naming:
+      q1 -> shoulder_pan_joint
+      q2 -> shoulder_lift_joint
+      q3 -> elbow_flex_joint
+      q4 -> forearm_roll_joint
+      q5 -> wrist_flex_joint
+      q6 -> wrist_roll_joint
+
+    Link chain:
+      base_link
+        -> shoulder_link
+        -> upper_arm_link
+        -> lower_arm_link
+        -> forearm_link
+        -> wrist_link
+        -> flange_link
+
+    lower_arm_link is the rigid body between q3 and q4. forearm_link is the
+    rigid body between q4 and q5. flange_link is the robot-side mechanical
+    interface and remains independent from the optional gripper subtree.
+
+    Required physical mesh rename/move mapping:
+      myarm_m750_base.dae -> meshes/base_link.dae
+      link1.dae           -> meshes/shoulder_link.dae
+      link2.dae           -> meshes/upper_arm_link.dae
+      link3.dae           -> meshes/lower_arm_link.dae
+      link4.dae           -> meshes/forearm_link.dae
+      link5.dae           -> meshes/wrist_link.dae
+      finger_holder.dae   -> meshes/gripper_base_link.dae
+      finger_left.dae     -> meshes/left_gripper_link.dae
+      finger_right.dae    -> meshes/right_gripper_link.dae
+  -->
+
+  <!-- Deployment arguments. -->
+  <xacro:arg name="prefix" default=""/>
+  <xacro:arg
+    name="mesh_root"
+    default="package://mycobot_description/urdf/myarm_m750/meshes"/>
+
+  <!-- Keep the arm usable without an end effector. -->
+  <xacro:arg name="attach_gripper" default="true"/>
+
+  <!--
+    Controller/mechanical zero calibration:
+      q2_model = q2_reported + 10.6539026 deg
+      q3_model = q3_reported - 10.6539026 deg
+
+    These defaults can be overridden without changing the MDH dimensions.
+  -->
+  <xacro:arg name="q2_zero_offset" default="0.185945678556784"/>
+  <xacro:arg name="q3_zero_offset" default="-0.185945678556784"/>
+
+  <!--
+    Preferred flange-to-tool transform:
+      R = Ry(pi)
+      p = [0, 0, -0.118]^T
+
+    Alternative tool convention:
+      tool_xyz: 0 0 0.118
+      tool_rpy: 0 0 0
+  -->
+  <xacro:arg name="tool_xyz" default="0 0 -0.118"/>
+  <xacro:arg name="tool_rpy" default="0 3.141592653589793 0"/>
+
+  <!-- Provisional planning limits; override when measured limits are available. -->
+  <xacro:arg name="arm_velocity_limit" default="1.0"/>
+  <xacro:arg name="arm_effort_limit" default="1.0"/>
+  <xacro:arg name="gripper_velocity_limit" default="0.05"/>
+  <xacro:arg name="gripper_effort_limit" default="20.0"/>
+
+  <xacro:property name="prefix" value="$(arg prefix)"/>
+  <xacro:property name="mesh_root" value="$(arg mesh_root)"/>
+  <xacro:property name="pi" value="3.14159265358979323846"/>
+
+  <xacro:property name="q2_zero_offset" value="$(arg q2_zero_offset)"/>
+  <xacro:property name="q3_zero_offset" value="$(arg q3_zero_offset)"/>
+
+  <xacro:property
+    name="arm_velocity_limit"
+    value="$(arg arm_velocity_limit)"/>
+  <xacro:property
+    name="arm_effort_limit"
+    value="$(arg arm_effort_limit)"/>
+  <xacro:property
+    name="gripper_velocity_limit"
+    value="$(arg gripper_velocity_limit)"/>
+  <xacro:property
+    name="gripper_effort_limit"
+    value="$(arg gripper_effort_limit)"/>
+
+  <!-- MDH dimensions in metres. -->
+  <xacro:property name="d1" value="0.097900"/>
+  <xacro:property name="a1" value="0.076000"/>
+  <xacro:property name="a2" value="0.308315"/>
+  <xacro:property name="d4" value="0.078800"/>
+  <xacro:property name="d5" value="0.249110"/>
+  <xacro:property name="d6" value="0.079000"/>
+
+  <!-- Position limits from the current MyArmMControl validation data. -->
+  <xacro:property name="q1_lower" value="${-165.0 * pi / 180.0}"/>
+  <xacro:property name="q1_upper" value="${ 165.0 * pi / 180.0}"/>
+  <xacro:property name="q2_lower" value="${ -80.0 * pi / 180.0}"/>
+  <xacro:property name="q2_upper" value="${ 100.0 * pi / 180.0}"/>
+  <xacro:property name="q3_lower" value="${-100.0 * pi / 180.0}"/>
+  <xacro:property name="q3_upper" value="${  80.0 * pi / 180.0}"/>
+  <xacro:property name="q4_lower" value="${-160.0 * pi / 180.0}"/>
+  <xacro:property name="q4_upper" value="${ 160.0 * pi / 180.0}"/>
+  <xacro:property name="q5_lower" value="${ -90.0 * pi / 180.0}"/>
+  <xacro:property name="q5_upper" value="${ 120.0 * pi / 180.0}"/>
+  <xacro:property name="q6_lower" value="${-180.0 * pi / 180.0}"/>
+  <xacro:property name="q6_upper" value="${ 180.0 * pi / 180.0}"/>
+
+  <xacro:macro name="mesh_link" params="name mesh xyz rpy">
+    <link name="${prefix}${name}">
+      <visual name="${prefix}${name}_visual">
+        <origin xyz="${xyz}" rpy="${rpy}"/>
+        <geometry>
+          <mesh filename="${mesh_root}/${mesh}" scale="1 1 1"/>
+        </geometry>
+      </visual>
+      <collision name="${prefix}${name}_collision">
+        <origin xyz="${xyz}" rpy="${rpy}"/>
+        <geometry>
+          <mesh filename="${mesh_root}/${mesh}" scale="1 1 1"/>
+        </geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro
+    name="arm_revolute_joint"
+    params="name parent child xyz rpy lower upper">
+    <joint name="${prefix}${name}" type="revolute">
+      <parent link="${prefix}${parent}"/>
+      <child link="${prefix}${child}"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+      <axis xyz="0 0 1"/>
+      <limit
+        lower="${lower}"
+        upper="${upper}"
+        velocity="${arm_velocity_limit}"
+        effort="${arm_effort_limit}"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- ======================== Robot arm geometry ======================== -->
+
+  <xacro:mesh_link
+    name="base_link"
+    mesh="base_link.dae"
+    xyz="0 0 0"
+    rpy="0 0 0"/>
+
+  <xacro:mesh_link
+    name="shoulder_link"
+    mesh="shoulder_link.dae"
+    xyz="0 0 -0.073900"
+    rpy="0 0 0"/>
+
+  <xacro:mesh_link
+    name="upper_arm_link"
+    mesh="upper_arm_link.dae"
+    xyz="0.001100 0 0"
+    rpy="${pi} 0 0"/>
+
+  <xacro:mesh_link
+    name="lower_arm_link"
+    mesh="lower_arm_link.dae"
+    xyz="-0.004215 0.057000 0"
+    rpy="0 0 ${pi / 2.0}"/>
+
+  <xacro:mesh_link
+    name="forearm_link"
+    mesh="forearm_link.dae"
+    xyz="-0.004215 0 -0.190910"
+    rpy="0 0 ${pi}"/>
+
+  <xacro:mesh_link
+    name="wrist_link"
+    mesh="wrist_link.dae"
+    xyz="-0.004215 0.067090 0"
+    rpy="0 0 ${pi / 2.0}"/>
+
+  <!-- MDH frame 6: robot-side flange, intentionally independent of EEF. -->
+  <link name="${prefix}flange_link"/>
+
+  <!-- ======================= Robot arm kinematics ====================== -->
+
+  <!-- q1: alpha0=0, a0=0, d1=0.0979, delta1=0 -->
+  <xacro:arm_revolute_joint
+    name="shoulder_pan_joint"
+    parent="base_link"
+    child="shoulder_link"
+    xyz="0 0 ${d1}"
+    rpy="0 0 0"
+    lower="${q1_lower}"
+    upper="${q1_upper}"/>
+
+  <!--
+    q2: alpha1=-pi/2, a1=0.076, d2=0
+    nominal delta2=-pi/2
+    calibrated delta2=-pi/2 + q2_zero_offset
+    default q2_zero_offset=+10.6539026 deg
+  -->
+  <xacro:arm_revolute_joint
+    name="shoulder_lift_joint"
+    parent="shoulder_link"
+    child="upper_arm_link"
+    xyz="${a1} 0 0"
+    rpy="${-pi / 2.0} ${-pi / 2.0 + q2_zero_offset} 0"
+    lower="${q2_lower}"
+    upper="${q2_upper}"/>
+
+  <!--
+    q3: alpha2=0, a2=0.308315, d3=0
+    nominal delta3=0
+    calibrated delta3=q3_zero_offset
+    default q3_zero_offset=-10.6539026 deg
+  -->
+  <xacro:arm_revolute_joint
+    name="elbow_flex_joint"
+    parent="upper_arm_link"
+    child="lower_arm_link"
+    xyz="${a2} 0 0"
+    rpy="0 0 ${q3_zero_offset}"
+    lower="${q3_lower}"
+    upper="${q3_upper}"/>
+
+  <!--
+    q4: alpha3=-pi/2, a3=0, d4=0.0788, delta4=pi
+    Origin = Rx(-pi/2) Rz(pi) Tz(d4)
+  -->
+  <xacro:arm_revolute_joint
+    name="forearm_roll_joint"
+    parent="lower_arm_link"
+    child="forearm_link"
+    xyz="0 ${d4} 0"
+    rpy="${pi / 2.0} 0 ${pi}"
+    lower="${q4_lower}"
+    upper="${q4_upper}"/>
+
+  <!--
+    q5: alpha4=pi/2, a4=0, d5=0.24911, delta5=pi
+    0.24911 m = 249.11 mm.
+  -->
+  <xacro:arm_revolute_joint
+    name="wrist_flex_joint"
+    parent="forearm_link"
+    child="wrist_link"
+    xyz="0 ${-d5} 0"
+    rpy="${-pi / 2.0} 0 ${pi}"
+    lower="${q5_lower}"
+    upper="${q5_upper}"/>
+
+  <!-- q6: alpha5=-pi/2, a5=0, d6=0.079, delta6=pi -->
+  <xacro:arm_revolute_joint
+    name="wrist_roll_joint"
+    parent="wrist_link"
+    child="flange_link"
+    xyz="0 ${d6} 0"
+    rpy="${pi / 2.0} 0 ${pi}"
+    lower="${q6_lower}"
+    upper="${q6_upper}"/>
+
+  <!--
+    Configurable tool frame. This is not part of the six-row MDH table.
+    Default:
+      flange_link -> tool0 = Ry(pi), translation [0, 0, -0.118].
+  -->
+  <link name="${prefix}tool0"/>
+  <joint name="${prefix}flange_to_tool0_joint" type="fixed">
+    <parent link="${prefix}flange_link"/>
+    <child link="${prefix}tool0"/>
+    <origin xyz="$(arg tool_xyz)" rpy="$(arg tool_rpy)"/>
+  </joint>
+
+  <!-- ==================== Optional end-effector subtree ==================== -->
+
+  <xacro:if value="$(arg attach_gripper)">
+    <xacro:mesh_link
+      name="gripper_base_link"
+      mesh="gripper_base_link.dae"
+      xyz="0.004215 0 -0.060010"
+      rpy="0 0 0"/>
+
+    <xacro:mesh_link
+      name="left_gripper_link"
+      mesh="left_gripper_link.dae"
+      xyz="0 0 0"
+      rpy="0 ${pi} ${-pi / 2.0}"/>
+
+    <xacro:mesh_link
+      name="right_gripper_link"
+      mesh="right_gripper_link.dae"
+      xyz="0 0 0"
+      rpy="0 ${pi} ${-pi / 2.0}"/>
+
+    <!-- The gripper is attached to, but not merged with, the robot flange. -->
+    <joint name="${prefix}gripper_mount_joint" type="fixed">
+      <parent link="${prefix}flange_link"/>
+      <child link="${prefix}gripper_base_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="${prefix}left_gripper_joint" type="prismatic">
+      <parent link="${prefix}gripper_base_link"/>
+      <child link="${prefix}left_gripper_link"/>
+      <origin
+        xyz="0.004215 0.008000 -0.024010"
+        rpy="${pi / 2.0} 0 ${-pi}"/>
+      <axis xyz="0 0 1"/>
+      <limit
+        lower="0.0"
+        upper="0.0345"
+        velocity="${gripper_velocity_limit}"
+        effort="${gripper_effort_limit}"/>
+    </joint>
+
+    <joint name="${prefix}right_gripper_joint" type="prismatic">
+      <parent link="${prefix}gripper_base_link"/>
+      <child link="${prefix}right_gripper_link"/>
+      <origin
+        xyz="0.004215 -0.008000 -0.024010"
+        rpy="${pi / 2.0} 0 ${-pi}"/>
+      <axis xyz="0 0 -1"/>
+      <limit
+        lower="0.0"
+        upper="0.0345"
+        velocity="${gripper_velocity_limit}"
+        effort="${gripper_effort_limit}"/>
+      <mimic
+        joint="${prefix}left_gripper_joint"
+        multiplier="1.0"
+        offset="0.0"/>
+    </joint>
+  </xacro:if>
+
+</robot>

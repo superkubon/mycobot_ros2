@@ -5,16 +5,11 @@ from sensor_msgs.msg import JointState
 import math
 import sys
 
-# Import the official Elephant Robotics Python SDK
+# Import the MyArmMControl API 
 try:
-    # The myArm M750 is accessed via MyArmM in the latest SDK
-    from pymycobot import MyArmM as MyArmHardware
+    from pymycobot import MyArmMControl as MyArmHardware #[cite: 2]
 except ImportError:
-    try:
-        # Fallback for older pymycobot versions
-        from pymycobot.myarm import MyArm as MyArmHardware
-    except ImportError:
-        MyArmHardware = None
+    MyArmHardware = None
 
 class MyArmHardwareInterface(Node):
     def __init__(self):
@@ -26,7 +21,8 @@ class MyArmHardwareInterface(Node):
 
         # 1. Hardware Connection Parameters
         self.declare_parameter('port', '/dev/ttyACM0')
-        self.declare_parameter('baudrate', 1000000)
+        # Updated default baudrate to match MyArmMControl initialization 
+        self.declare_parameter('baudrate', 1000000) #[cite: 2]
 
         port = self.get_parameter('port').value
         baud = self.get_parameter('baudrate').value
@@ -34,19 +30,15 @@ class MyArmHardwareInterface(Node):
         # 2. Connect to the physical robot
         try:
             self.get_logger().info(f"Connecting to myArm on {port} at {baud} baud...")
-            self.arm = MyArmHardware(port, baud)
+            self.arm = MyArmHardware(port, baudrate=baud) #[cite: 2]
             self.get_logger().info("Successfully connected to hardware!")
             
-            # Power on the servos
-            if hasattr(self.arm, 'power_on'):
-                self.arm.power_on()
-            elif hasattr(self.arm, 'set_robot_power_on'):
-                self.arm.set_robot_power_on()
-                
+            # The robotic arm turns on the power
+            self.arm.power_on() #[cite: 2]
+            self.arm.set_fresh_mode(0)
         except Exception as e:
             self.get_logger().error(f"Failed to connect to hardware: {e}")
             self.arm = None
-
         # 3. Subscribe to the C++ IK Solver's output
         self.subscription = self.create_subscription(
             JointState,
@@ -62,9 +54,9 @@ class MyArmHardwareInterface(Node):
         if self.arm is None:
             return
 
-        # CHANGE: Force exactly 7 elements to prevent SDK crashes
-        expected_joints = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6', 'joint7']
-        target_angles = [0.0] * 7
+        # Force exactly 6 elements to prevent SDK crashes
+        expected_joints = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_flex_joint', 'forearm_roll_joint', 'wrist_flex_joint', 'wrist_roll_joint']
+        target_angles = [0.0] * 6
 
         # Parse arm joints safely, mapping them to the exact correct index
         for i, name in enumerate(msg.name):
@@ -72,8 +64,10 @@ class MyArmHardwareInterface(Node):
                 idx = expected_joints.index(name)
                 # Convert Radians to Degrees
                 deg = math.degrees(msg.position[i])
-                if idx == 0 or idx == 2 or idx == 3:
-                    deg = -deg
+                if idx == 1:
+                    deg = deg + 10
+                if idx == 2:
+                    deg = deg - 10
                 target_angles[idx] = round(deg, 2)
 
         # Send to hardware! (It will now always be exactly 7 elements)
@@ -81,17 +75,14 @@ class MyArmHardwareInterface(Node):
             self.get_logger().info(f"Sending to Hardware (deg): {target_angles}")
             
             try:
-                # Use the new set_joints_angle from the latest SDK
-                if hasattr(self.arm, 'set_joints_angle'):
-                    self.arm.set_joints_angle(target_angles, 50)
-                elif hasattr(self.arm, 'send_angles'):
-                    self.arm.send_angles(target_angles, 50)
+                # Send the angles of all joints to robot arm using MyArmMControl API
+                self.arm.write_angles(target_angles, 90) #[cite: 2]
             except Exception as e:
                 self.get_logger().error(f"Hardware Error: {e}")
                 
             self.last_angles = target_angles.copy()
 
-    def has_significant_change(self, current, last, threshold=0.5):
+    def has_significant_change(self, current, last, threshold=0.1):
         if len(current) != len(last):
             return True
         for c, l in zip(current, last):
@@ -108,10 +99,10 @@ def main(args=None):
     except KeyboardInterrupt:
         node.get_logger().info("Shutting down Hardware Interface...")
         if hasattr(node, 'arm') and node.arm:
-            if hasattr(node.arm, 'release_all_servos'):
-                node.arm.release_all_servos()
-            elif hasattr(node.arm, 'set_robot_power_off'):
-                node.arm.set_robot_power_off()
+            # The robot turns off the torque output
+            node.arm.release_all_servos() #[cite: 2]
+            # The robotic arm turns off the power
+            node.arm.power_off() #[cite: 2]
     finally:
         node.destroy_node()
         rclpy.shutdown()

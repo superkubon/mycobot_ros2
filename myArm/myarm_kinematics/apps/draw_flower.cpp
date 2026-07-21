@@ -32,7 +32,7 @@ public:
         
         setup_marker();
 
-        timer_ = this->create_wall_timer(20ms, std::bind(&DrawCircleNode::timer_callback, this));
+        timer_ = this->create_wall_timer(10ms, std::bind(&DrawCircleNode::timer_callback, this));
         start_time_ = this->now();
         
         RCLCPP_INFO(this->get_logger(), "Drawing node started! Add a 'Marker' display in RViz.");
@@ -42,7 +42,7 @@ private:
     void setup_marker()
     {
         // Configure the line we will draw in RViz
-        marker_.header.frame_id = "base"; // Use "base" or "base_link" depending on your URDF root
+        marker_.header.frame_id = "base_link"; // Use "base" or "base_link" depending on your URDF root
         marker_.ns = "flower_trajectory";
         marker_.id = 0;
         marker_.type = visualization_msgs::msg::Marker::LINE_STRIP;
@@ -63,14 +63,14 @@ private:
         double t = (this->now() - start_time_).seconds();
         
         // --- 5-Petal Flower Mathematics ---
-        double max_radius = 0.15; 
+        double max_radius = 0.13; 
         double speed = 1.0;       
         double k = 5.0;           
         
-        double x_base = 0.55; 
+        double x_base = 0.40; // Chỉ cách đế 25cm
         double r = max_radius * std::cos(k * t * speed);
         double y = r * std::cos(t * speed);
-        double z = 0.35 + r * std::sin(t * speed);
+        double z = 0.35 + r * std::sin(t * speed); // Hạ thấp độ cao xuống 25cm
 
         Eigen::Vector3d target_position(x_base, y, z);
         
@@ -91,13 +91,10 @@ private:
         marker_publisher_->publish(marker_);
         
         // --- IK Solver ---
-        Eigen::Matrix3d target_rotation;
-        target_rotation <<  0.0,  0.0, -1.0,
-                            1.0,  0.0,  0.0,
-                            0.0, -1.0,  0.0;
+        Eigen::Matrix3d target_rotation = Eigen::Matrix3d::Identity();
         
         pinocchio::SE3 target_pose(target_rotation, target_position);
-        bool success = ik_solver_->solve("gripper", target_pose, q_current_);
+        bool success = ik_solver_->solve("flange_link", target_pose, q_current_);
 
         if (success) {
             publish_joints();
