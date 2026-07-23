@@ -35,7 +35,7 @@ class MyArmHardwareInterface(Node):
             
             # The robotic arm turns on the power
             self.arm.power_on() #[cite: 2]
-            self.arm.set_fresh_mode(0)
+            self.arm.set_fresh_mode(1)
         except Exception as e:
             self.get_logger().error(f"Failed to connect to hardware: {e}")
             self.arm = None
@@ -76,13 +76,13 @@ class MyArmHardwareInterface(Node):
             
             try:
                 # Send the angles of all joints to robot arm using MyArmMControl API
-                self.arm.write_angles(target_angles, 90) #[cite: 2]
+                self.arm.write_angles(target_angles, 40) #[cite: 2]
             except Exception as e:
                 self.get_logger().error(f"Hardware Error: {e}")
                 
             self.last_angles = target_angles.copy()
 
-    def has_significant_change(self, current, last, threshold=0.1):
+    def has_significant_change(self, current, last, threshold=0.04):
         if len(current) != len(last):
             return True
         for c, l in zip(current, last):

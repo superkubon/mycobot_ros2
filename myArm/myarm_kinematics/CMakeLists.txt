@@ -21,7 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
-
+find_package(trajectory_msgs REQUIRED)
 find_package(pinocchio REQUIRED)
 find_package(Eigen3 REQUIRED)
 message(STATUS "pinocchio_INCLUDE_DIRS = ${pinocchio_INCLUDE_DIRS}")
@@ -96,7 +96,7 @@ target_link_libraries(draw_flower
 
 ament_target_dependencies(draw_square rclcpp sensor_msgs)
 ament_target_dependencies(draw_circle rclcpp sensor_msgs)
-ament_target_dependencies(draw_flower rclcpp sensor_msgs visualization_msgs)
+ament_target_dependencies(draw_flower rclcpp sensor_msgs visualization_msgs trajectory_msgs)
 
 find_package(ament_index_cpp REQUIRED)
 
@@ -120,6 +120,15 @@ ament_target_dependencies(fk_test_node
   pinocchio
 )
 
+add_executable(flower_trajectory_node apps/flower_trajectory_node.cpp)
+target_link_libraries(flower_trajectory_node robot_model)
+ament_target_dependencies(flower_trajectory_node
+    rclcpp
+    trajectory_msgs
+    sensor_msgs
+    ament_index_cpp
+    visualization_msgs
+)
 add_compile_options(-Wno-ignored-attributes)
 
 install(
@@ -133,6 +142,7 @@ install(
         draw_circle
         draw_flower
         fk_test_node
+        flower_trajectory_node
     DESTINATION lib/${PROJECT_NAME}
 )
 
