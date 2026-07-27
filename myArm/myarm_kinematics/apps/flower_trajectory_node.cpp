@@ -6,6 +6,7 @@
 #include <geometry_msgs/msg/point.hpp>
 #include "myarm_kinematics/robot_model.hpp"
 #include "myarm_kinematics/inverse.hpp"
+#include "myarm_kinematics/forward.hpp"
 #include <cmath>
 
 class FlowerTrajectoryGenerator : public rclcpp::Node
@@ -39,17 +40,16 @@ public:
 private:
     void generateAndSendTrajectory()
     {
-        timer_->cancel(); // Hủy timer ngay lập tức để vòng lặp này chỉ chạy đúng 1 lần
+        timer_->cancel();
 
         trajectory_msgs::msg::JointTrajectory traj_msg;
-        // Đặt tên khớp đúng chuẩn với Hardware Interface đang mong đợi
         traj_msg.joint_names = {
             "shoulder_pan_joint", "shoulder_lift_joint", "elbow_flex_joint", 
             "forearm_roll_joint", "wrist_flex_joint", "wrist_roll_joint"
         };
 
         visualization_msgs::msg::Marker marker;
-        marker.header.frame_id = "base_link"; // Tên hệ tọa độ gốc (thường là env hoặc base_link)
+        marker.header.frame_id = "base_link";
         marker.header.stamp = this->now();
         marker.ns = "flower_drawing";
         marker.id = 0;
@@ -86,7 +86,8 @@ private:
             
             // --- BƯỚC B: GIẢI IK NGAY TRONG VÒNG LẶP ---
             bool success = ik_solver_->solve("flange_link", target_se3, current_q_);
-
+            myarm::ForwardKinematics fk(robot_);
+            fk.compute(current_q_);
             if (success) {
                 trajectory_msgs::msg::JointTrajectoryPoint point;
                 // Đẩy 6 góc khớp (tương ứng 6 tên ở trên) vào point

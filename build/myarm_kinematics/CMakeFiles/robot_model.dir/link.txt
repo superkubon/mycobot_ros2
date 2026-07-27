@@ -1,2 +1,0 @@
-/usr/bin/ar qc librobot_model.a  CMakeFiles/robot_model.dir/src/robot_model.cpp.o CMakeFiles/robot_model.dir/src/forward.cpp.o CMakeFiles/robot_model.dir/src/inverse.cpp.o
-/usr/bin/ranlib librobot_model.a
