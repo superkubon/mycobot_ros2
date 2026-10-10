@@ -2,7 +2,7 @@ import threading
 from pymycobot import MyArmMControl, utils
 import keyboard
 import time
-m = MyArmMControl("COM5",1000000)
+m = MyArmMControl("/dev/ttyACM0",1000000)
 def init():
     # 设置初始角度
     # m.write_angles([-10.19, 8.62, 30.65, 2.19, 50.53, -4.83], 100)

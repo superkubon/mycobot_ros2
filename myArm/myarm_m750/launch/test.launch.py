@@ -33,7 +33,7 @@ def generate_launch_description():
 
     gui_launch_arg = DeclareLaunchArgument(
         name="gui",
-        default_value="true"
+        default_value="false"
     )
     res.append(gui_launch_arg)
 
@@ -48,12 +48,12 @@ def generate_launch_description():
     )
     res.append(robot_state_publisher_node)
 
-    joint_state_publisher_node = Node(
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-        condition=UnlessCondition(LaunchConfiguration('gui'))
-    )
-    res.append(joint_state_publisher_node)
+    # joint_state_publisher_node = Node(
+    #     package='joint_state_publisher',
+    #     executable='joint_state_publisher',
+    #     condition=UnlessCondition(LaunchConfiguration('gui'))
+    # )
+    # res.append(joint_state_publisher_node)
 
     # joint_state_publisher_gui_node = Node(
     #     package='joint_state_publisher_gui',
@@ -61,6 +61,23 @@ def generate_launch_description():
     #     condition=IfCondition(LaunchConfiguration('gui'))
     # )
     # res.append(joint_state_publisher_gui_node)
+    # Add the C++ iKinQP Solver Node
+    ikin_qp_solver_node = Node(
+        package='myarm_kinematics',
+        executable='ikin_qp_solver_node',
+        name='ikin_qp_solver_node',
+        output='screen'
+    )
+    res.append(ikin_qp_solver_node)
+
+    # Add the Python Interactive Target Dragger Node
+    interactive_ik_target = Node(
+        package='myarm_m750',
+        executable='interactive_ik_target', 
+        name='interactive_ik_target',
+        output='screen'
+    )
+    res.append(interactive_ik_target)
 
     rviz_node = Node(
         name="rviz2",

@@ -272,7 +272,7 @@
     <origin xyz="0.031000 0 0" rpy="0 1.570796326794897 0"/>
   </joint>
 
-  <joint name="left_gripper_joint" type="prismatic">
+  <joint name="left_gripper_joint" type="fixed">
     <parent link="gripper_base_link"/>
     <child link="left_gripper_link"/>
     <origin xyz="0 0.008000 0" rpy="1.570796326794897 0 -3.141592653589793"/>
@@ -280,7 +280,7 @@
     <limit lower="0.0" upper="0.0345" velocity="0.05" effort="20.0"/>
   </joint>
 
-  <joint name="right_gripper_joint" type="prismatic">
+  <joint name="right_gripper_joint" type="fixed">
     <parent link="gripper_base_link"/>
     <child link="right_gripper_link"/>
     <origin xyz="0 -0.008000 0" rpy="1.570796326794897 0 -3.141592653589793"/>

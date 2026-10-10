@@ -28,7 +28,7 @@ public:
         // 2. Publish vào topic /flower_trajectory thay vì /joint_states
         traj_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("/flower_trajectory", 10);
         marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("flower_marker", 10);
-        // 3. Dùng Timer để tự động tạo và gửi quỹ đạo sau khi node bật lên 2 giây (đợi các node khác subscribe)
+        // 3. Dùng Tquỹ imer để tự động tạo và gửi đạo sau khi node bật lên 2 giây (đợi các node khác subscribe)
         timer_ = this->create_wall_timer(
             std::chrono::seconds(2),
             std::bind(&FlowerTrajectoryGenerator::generateAndSendTrajectory, this)
@@ -38,7 +38,7 @@ public:
     }
 
 private:
-    void generateAndSendTrajectory()
+void generateAndSendTrajectory()
     {
         timer_->cancel();
 
@@ -55,22 +55,24 @@ private:
         marker.id = 0;
         marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
         marker.action = visualization_msgs::msg::Marker::ADD;
-        marker.scale.x = 0.005; // Độ dày của nét vẽ (5mm)
-        marker.color.a = 1.0;   // Độ rõ nét (1.0 là đặc, không trong suốt)
-        marker.color.r = 1.0;   // Màu đỏ (Red)
+        marker.scale.x = 0.005; // Độ dày nét vẽ
+        marker.color.a = 1.0;   
+        marker.color.r = 1.0;   // Đỏ
         marker.color.g = 0.0;
         marker.color.b = 0.0;
 
         RCLCPP_INFO(this->get_logger(), "Bắt đầu giải IK cho toàn bộ quỹ đạo bông hoa...");
+        myarm::ForwardKinematics fk(robot_);
 
-        int num_points = 400; // Giả sử quỹ đạo chia làm 100 điểm
+        int num_points = 400; 
+        double max_error = 0.0; 
         
         for (int i = 0; i < num_points; ++i) {
 
             double t = i * 2.0 * M_PI / num_points;
-            double r = 0.15 * sin(4 * t); // Hình lá hoa
-            double x = 0.4; // Cố định mũi vẽ cách gốc robot 40cm về phía trước
-            double y = 0.0 + r * cos(t); // Nét vẽ lướt sang trái / phải
+            double r = 0.15 * sin(4 * t); 
+            double x = 0.4; 
+            double y = 0.0 + r * cos(t); 
             double z = 0.3 + r * sin(t);
             
             geometry_msgs::msg::Point p;
@@ -82,34 +84,50 @@ private:
             pinocchio::SE3 target_se3 = pinocchio::SE3::Identity();
             target_se3.translation() << x, y, z;
             
-            // Tạm thời bỏ qua định hướng cổ tay (Orientation) hoặc bạn có thể thiết lập quaternion tại đây giống code cũ
-            
-            // --- BƯỚC B: GIẢI IK NGAY TRONG VÒNG LẶP ---
             bool success = ik_solver_->solve("flange_link", target_se3, current_q_);
-            myarm::ForwardKinematics fk(robot_);
-            fk.compute(current_q_);
+
             if (success) {
+                // 1. Tính toán Forward Kinematics từ nghiệm IK
+                fk.compute(current_q_);
+                
+                // 2. Lấy pose của khâu cuối
+                pinocchio::SE3 fk_pose = fk.pose("flange_link");
+                Eigen::Vector3d fk_pos = fk_pose.translation();
+                
+                // 3. Tính sai số vị trí 
+                Eigen::Vector3d target_pos(x, y, z);
+                double error = (fk_pos - target_pos).norm(); // Tính bằng mét
+                
+                // Cập nhật sai số lớn nhất
+                if (error > max_error) {
+                    max_error = error;
+                }
+
+                // Nếu sai số quá 1 milimet (0.001 m), in ra cảnh báo
+                if (error > 0.001) {
+                    RCLCPP_WARN(this->get_logger(), "Điểm %d: Sai số IK lớn = %f m", i, error);
+                }
+
+                // 4. Lưu nghiệm vào quỹ đạo
                 trajectory_msgs::msg::JointTrajectoryPoint point;
-                // Đẩy 6 góc khớp (tương ứng 6 tên ở trên) vào point
                 for (int j = 0; j < 6; ++j) {
                     point.positions.push_back(current_q_[j]);
                 }
                 traj_msg.points.push_back(point);
+            } else {
+                RCLCPP_ERROR(this->get_logger(), "Điểm %d: IK THẤT BẠI tại tọa độ (%.2f, %.2f, %.2f)", i, x, y, z);
             }
         }
 
+        RCLCPP_INFO(this->get_logger(), "Hoàn tất giải IK! Tổng số điểm: %zu", traj_msg.points.size());
+        RCLCPP_INFO(this->get_logger(), "--> SAI SỐ THUẬT TOÁN (Max Error): %f mét", max_error);
         
-        RCLCPP_INFO(this->get_logger(), "Hoàn tất giải IK. Đang gửi %zu điểm đi trong 1 message duy nhất!", traj_msg.points.size());
-        
-        // --- BƯỚC C: GỬI TOÀN BỘ QUỸ ĐẠO CÙNG LÚC ---
         if (!marker.points.empty()) {
             marker.points.push_back(marker.points[0]);
         }
 
-        // Publish cả Quỹ đạo và Marker cùng lúc
         marker_pub_->publish(marker);
         traj_pub_->publish(traj_msg);
-        
     }
 
     myarm::RobotModel robot_;

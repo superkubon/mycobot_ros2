@@ -59,6 +59,12 @@ setup(
             'combined_control = myarm_m750.combined_control:main',
             'hardware_interface = myarm_m750.hardware_interface:main',
             'simulation_hardware_interface = myarm_m750.simulation_hardware_interface:main',
+            'interactive_ik_target = myarm_m750.interactive_ik_target:main',
+            'myarm_controller = myarm_m750.myarm_controller:main',
+            'myarm_motion = myarm_m750.myarm_motion:main',
+            'test_gripper = myarm_m750.test_gripper:main',
+            'benchmark_target = myarm_m750.benchmark_target:main',
+
         ],
     },
 )
